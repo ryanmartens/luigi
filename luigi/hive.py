@@ -133,7 +133,7 @@ class HiveCommandClient(HiveClient):
     def partition_spec(self, partition):
         """ Turns a dict into the a Hive partition specification string """
         return ','.join(["{0}='{1}'".format(k, v) for (k, v) in
-                         list(sorted(partition.items(), key=operator.itemgetter(0))]))
+                         list(sorted(partition.items(), key=operator.itemgetter(0)))])
 
 
 class ApacheHiveCommandClient(HiveCommandClient):
