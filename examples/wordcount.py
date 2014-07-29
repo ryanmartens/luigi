@@ -27,7 +27,7 @@ class WordCount(luigi.Task):
 
         # output data
         f = self.output().open('w')
-        for word, count in count.iteritems():
+        for word, count in count.items():
             f.write("%s\t%d\n" % (word, count))
         f.close() # Note that this is essential because file system operations are atomic
 

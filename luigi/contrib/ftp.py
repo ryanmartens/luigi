@@ -67,7 +67,7 @@ class RemoteFileSystem(luigi.target.FileSystem):
         try:
             ftp.rmd(path)
         except ftplib.all_errors as e:
-            print('_rm_recursive: Could not remove {0}: {1}'.format(path, e))
+            print(('_rm_recursive: Could not remove {0}: {1}'.format(path, e)))
 
     def remove(self, path, recursive=True):
         """ Remove file or directory at location ``path``

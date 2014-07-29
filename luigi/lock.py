@@ -39,7 +39,7 @@ def acquire_for(pid_dir, num_available=1):
     # Check if there is a pid file corresponding to this name
     if not os.path.exists(pid_dir):
         os.mkdir(pid_dir)
-        os.chmod(pid_dir, 0777)
+        os.chmod(pid_dir, 0o777)
 
     pidfile = os.path.join(pid_dir, hashlib.md5(my_cmd).hexdigest()) + '.pid'
 
@@ -47,13 +47,13 @@ def acquire_for(pid_dir, num_available=1):
     pid_cmds = {}
     if os.path.exists(pidfile):
         # There is such a file - read the pid and look up its process name
-        pids.update(filter(None, map(str.strip, open(pidfile))))
+        pids.update([_f for _f in map(str.strip, open(pidfile)) if _f])
         pid_cmds = dict((pid, getpcmd(pid)) for pid in pids)
-        matching_pids = filter(lambda pid: pid_cmds[pid] == my_cmd, pids)
+        matching_pids = [pid for pid in pids if pid_cmds[pid] == my_cmd]
 
         if len(matching_pids) >= num_available:
             # We are already running under a different pid
-            print 'Pid(s)', ', '.join(matching_pids), 'already running'
+            print(('Pid(s)', ', '.join(matching_pids), 'already running'))
             return False
         else:
             # The pid belongs to something else, we could

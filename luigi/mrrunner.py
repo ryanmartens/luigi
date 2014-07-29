@@ -23,7 +23,7 @@ mapper and reducer on the Hadoop nodes.
 import os
 import sys
 import tarfile
-import cPickle as pickle
+import pickle as pickle
 import logging
 import traceback
 
@@ -60,7 +60,7 @@ class Runner(object):
 
 def print_exception(exc):
     tb = traceback.format_exc(exc)
-    print >> sys.stderr, 'luigi-exc-hex=%s' % tb.encode('hex')
+    print('luigi-exc-hex=%s' % tb.encode('hex'), file=sys.stderr)
 
 
 def main(args=sys.argv, stdin=sys.stdin, stdout=sys.stdout, print_exception=print_exception):
@@ -76,7 +76,7 @@ def main(args=sys.argv, stdin=sys.stdin, stdout=sys.stdout, print_exception=prin
     
         kind = args[1]
         Runner().run(kind, stdin=stdin, stdout=stdout)
-    except Exception, exc:
+    except Exception as exc:
         # Dump encoded data that we will try to fetch using mechanize
         print_exception(exc)
         raise

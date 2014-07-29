@@ -36,7 +36,7 @@ Step 1 - Aggregate Artist Streams
                         artist_count[artist] += 1
 
             with self.output().open('w') as out_file:
-                for artist, count in artist_count.iteritems():
+                for artist, count in artist_count.items():
                     print >> out_file, artist, count
 
 Note that this is just a portion of the file *examples/top\_artists.py*.

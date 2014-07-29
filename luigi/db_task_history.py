@@ -12,13 +12,13 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-import task_history
-import configuration
+from . import task_history
+from . import configuration
 import datetime
 import logging
 
 from contextlib import contextmanager
-from task_status import PENDING, FAILED, DONE, RUNNING
+from .task_status import PENDING, FAILED, DONE, RUNNING
 
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import Column, Integer, String, ForeignKey, TIMESTAMP, create_engine
@@ -92,7 +92,7 @@ class DbTaskHistory(task_history.TaskHistory):
                 yield (task_record, session)
             else:
                 task_record = TaskRecord(name=task.task_family, host=task.host)
-                for (k, v) in task.parameters.iteritems():
+                for (k, v) in list(task.parameters.items()):
                     task_record.parameters[k] = TaskParameter(name=k, value=v)
                 session.add(task_record)
                 yield (task_record, session)
@@ -106,7 +106,7 @@ class DbTaskHistory(task_history.TaskHistory):
         with self._session(session) as session:
             tasks = session.query(TaskRecord).join(TaskEvent).filter(TaskRecord.name == task_name).order_by(TaskEvent.ts).all()
             for task in tasks:
-                if all(k in task.parameters and v == str(task.parameters[k].value) for (k, v) in task_params.iteritems()):
+                if all(k in task.parameters and v == str(task.parameters[k].value) for (k, v) in list(task_params.items())):
                     yield task
 
     def find_all_by_name(self, task_name, session=None):

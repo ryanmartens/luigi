@@ -73,7 +73,7 @@ class DbTaskHistoryTest(unittest.TestCase):
             self.assertEquals(len(records), 1)
             [record] = records
             self.assertEqual(task.task_family, record.name)
-            for param_name, param_value in task.param_kwargs.iteritems():
+            for param_name, param_value in task.param_kwargs.items():
                 self.assertTrue(param_name in record.parameters)
                 self.assertEquals(str(param_value), record.parameters[param_name].value)
 

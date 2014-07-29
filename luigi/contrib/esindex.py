@@ -266,9 +266,9 @@ class CopyToIndex(luigi.Task):
         """ Since `self.docs` may yield documents that do not explicitly
         contain `_index` or `_type`, add those attributes here, if necessary.
         """
-        first = iter(self.docs()).next()
+        first = next(iter(self.docs()))
         needs_parsing = False
-        if isinstance(first, basestring):
+        if isinstance(first, str):
             needs_parsing = True
         elif isinstance(first, dict):
             pass

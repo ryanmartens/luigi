@@ -33,7 +33,7 @@ class DateInterval(object):
 
     def hours(self):
         for date in self.dates():
-            for hour in xrange(24):
+            for hour in range(24):
                 yield datetime.datetime.combine(date, datetime.time(hour))
 
     def __str__(self):
@@ -45,7 +45,7 @@ class DateInterval(object):
     def prev(self):
         return self.from_date(self.date_a - datetime.timedelta(1))
 
-    def next(self):
+    def __next__(self):
         return self.from_date(self.date_b)
 
     def to_string(self):
@@ -101,13 +101,13 @@ class Date(DateInterval):
     @classmethod
     def parse(self, s):
         if re.match(r'\d\d\d\d\-\d\d\-\d\d$', s):
-            return Date(*map(int, s.split('-')))
+            return Date(*list(map(int, s.split('-'))))
 
 
 class Week(DateInterval):
     def __init__(self, y, w):
         # Python datetime does not have a method to convert from ISO weeks!
-        for d in xrange(-10, 370):
+        for d in range(-10, 370):
             date = datetime.date(y, 1, 1) + datetime.timedelta(d)
             if date.isocalendar() == (y, w, 1):
                 date_a = date
@@ -127,7 +127,7 @@ class Week(DateInterval):
     @classmethod
     def parse(self, s):
         if re.match(r'\d\d\d\d\-W\d\d$', s):
-            y, w = map(int, s.split('-W'))
+            y, w = list(map(int, s.split('-W')))
             return Week(y, w)
 
 
@@ -147,7 +147,7 @@ class Month(DateInterval):
     @classmethod
     def parse(self, s):
         if re.match(r'\d\d\d\d\-\d\d$', s):
-            y, m = map(int, s.split('-'))
+            y, m = list(map(int, s.split('-')))
             return Month(y, m)
 
 
@@ -180,7 +180,7 @@ class Custom(DateInterval):
             # Actually the ISO 8601 specifies <start>/<end> as the time interval format
             # Not sure if this goes for date intervals as well. In any case slashes will
             # most likely cause problems with paths etc.
-            x = map(int, s.split('-'))
+            x = list(map(int, s.split('-')))
             date_a = datetime.date(*x[:3])
             date_b = datetime.date(*x[3:])
             return Custom(date_a, date_b)

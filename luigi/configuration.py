@@ -1,7 +1,7 @@
 
 import os
 import logging
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 
 class LuigiConfigParser(ConfigParser):
@@ -45,16 +45,16 @@ class LuigiConfigParser(ConfigParser):
                 raise
             return default
 
-    def get(self, section, option, default=NO_DEFAULT):
+    def get(self, section, option, default=NO_DEFAULT, **kwargs):
         return self._get_with_default(ConfigParser.get, section, option, default)
 
-    def getboolean(self, section, option, default=NO_DEFAULT):
+    def getboolean(self, section, option, default=NO_DEFAULT, **kwargs):
         return self._get_with_default(ConfigParser.getboolean, section, option, default, bool)
 
-    def getint(self, section, option, default=NO_DEFAULT):
+    def getint(self, section, option, default=NO_DEFAULT, **kwargs):
         return self._get_with_default(ConfigParser.getint, section, option, default, int)
 
-    def getfloat(self, section, option, default=NO_DEFAULT):
+    def getfloat(self, section, option, default=NO_DEFAULT, **kwargs):
         return self._get_with_default(ConfigParser.getfloat, section, option, default, float)
 
     def set(self, section, option, value):

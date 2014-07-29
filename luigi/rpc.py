@@ -12,13 +12,12 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
 import logging
 import json
 import time
 import warnings
-from scheduler import Scheduler, PENDING
+from .scheduler import Scheduler, PENDING
 
 logger = logging.getLogger('luigi-interface')  # TODO: 'interface'?
 
@@ -44,18 +43,18 @@ class RemoteScheduler(Scheduler):
         # TODO(erikbern): do POST requests instead
         data = {'data': json.dumps(data)}
         url = 'http://%s:%d%s?%s' % \
-            (self._host, self._port, url, urllib.urlencode(data))
+            (self._host, self._port, url, urllib.parse.urlencode(data))
 
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         last_exception = None
-        for attempt in xrange(attempts):
+        for attempt in range(attempts):
             if last_exception:
                 logger.info("Retrying...")
                 self._wait()  # wait for a bit and retry
             try:
-                response = urllib2.urlopen(req, None, self._connect_timeout)
+                response = urllib.request.urlopen(req, None, self._connect_timeout)
                 break
-            except urllib2.URLError, last_exception:
+            except urllib.error.URLError as last_exception:
                 if log_exceptions:
                     logger.exception("Failed connecting to remote scheduler %r", self._host)
                 continue

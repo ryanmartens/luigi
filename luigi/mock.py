@@ -12,8 +12,8 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-import StringIO
-import target
+import io
+from . import target
 import sys
 import os
 
@@ -29,7 +29,7 @@ class MockFileSystem(target.FileSystem):
         """Removes the given mockfile. skip_trash doesn't have any meaning."""
         if recursive:
             to_delete=[]
-            for s in MockFile._file_contents.iterkeys():
+            for s in MockFile._file_contents.keys():
                 if s.startswith(path):
                     to_delete.append(s)
             for s in to_delete:
@@ -40,7 +40,7 @@ class MockFileSystem(target.FileSystem):
     def listdir(self, path):
         """listdir does a prefix match of MockFile._file_contents, but
         doesn't yet support globs"""
-        return [s for s in MockFile._file_contents.iterkeys()
+        return [s for s in MockFile._file_contents.keys()
                 if s.startswith(path)]
 
     def mkdir(self, path):
@@ -72,7 +72,7 @@ class MockFile(target.FileSystemTarget):
     def open(self, mode):
         fn = self._fn
 
-        class StringBuffer(StringIO.StringIO):
+        class StringBuffer(io.StringIO):
             # Just to be able to do writing + reading from the same buffer
             def write(self2, data):
                 if self._mirror_on_stderr:
@@ -80,12 +80,12 @@ class MockFile(target.FileSystemTarget):
                     if self2.tell() <= 0 or self2.read(1) == '\n':
                         sys.stderr.write(fn + ": ")
                     sys.stderr.write(data)
-                StringIO.StringIO.write(self2, data)
+                io.StringIO.write(self2, data)
 
             def close(self2):
                 if mode == 'w':
                     MockFile._file_contents[fn] = self2.getvalue()
-                StringIO.StringIO.close(self2)
+                io.StringIO.close(self2)
 
             def __exit__(self, type, value, traceback):
                 if not type:

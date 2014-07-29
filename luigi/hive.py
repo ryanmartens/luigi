@@ -69,9 +69,7 @@ def run_hive_script(script):
     return run_hive(['-f', script])
 
 
-class HiveClient(object):  # interface
-    __metaclass__ = abc.ABCMeta
-
+class HiveClient(object, metaclass=abc.ABCMeta):  # interface
     @abc.abstractmethod
     def table_location(self, table, database='default', partition={}):
         """
@@ -135,7 +133,7 @@ class HiveCommandClient(HiveClient):
     def partition_spec(self, partition):
         """ Turns a dict into the a Hive partition specification string """
         return ','.join(["{0}='{1}'".format(k, v) for (k, v) in
-                         sorted(partition.items(), key=operator.itemgetter(0))])
+                         list(sorted(partition.items(), key=operator.itemgetter(0))]))
 
 
 class ApacheHiveCommandClient(HiveCommandClient):
@@ -206,7 +204,7 @@ class MetastoreClient(HiveClient):
             return [(field_schema.name, field_schema.type) for field_schema in client.get_schema(database, table)]
 
     def partition_spec(self, partition):
-        return "/".join("%s=%s" % (k, v) for (k, v) in sorted(partition.items(), key=operator.itemgetter(0)))
+        return "/".join("%s=%s" % (k, v) for (k, v) in list(sorted(partition.items(), key=operator.itemgetter(0))))
 
 
 class HiveThriftContext(object):
@@ -230,7 +228,7 @@ class HiveThriftContext(object):
             transport.open()
             self.transport = transport
             return ThriftHiveMetastore.Client(protocol)
-        except ImportError, e:
+        except ImportError as e:
             raise Exception('Could not import Hive thrift library:' + str(e))
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -352,7 +350,7 @@ class HiveQueryRunner(luigi.hadoop.JobRunner):
             if job.hiverc():
                 arglist += ['-i', job.hiverc()]
             if job.hiveconfs():
-                for k, v in job.hiveconfs().iteritems():
+                for k, v in list(job.hiveconfs().items()):
                     arglist += ['--hiveconf', '{0}={1}'.format(k, v)]
 
             logger.info(arglist)
@@ -399,7 +397,7 @@ class HivePartitionTarget(luigi.Target):
         try:
             logger.debug("Checking Hive table '{d}.{t}' for partition {p}".format(d=self.database, t=self.table, p=str(self.partition)))
             return self.client.table_exists(self.table, self.database, self.partition)
-        except HiveCommandError, e:
+        except HiveCommandError as e:
             if self.fail_missing_table:
                 raise
             else:

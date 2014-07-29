@@ -4,10 +4,10 @@ the whoops library. Provides compatiblity with similar functionality in
 luigi.hdfs whenever possible.
 """
 import datetime
-import configuration
+from . import configuration
 import os
 import posixpath
-import urlparse
+import urllib.parse
 import whoops
 
 
@@ -29,7 +29,7 @@ def get_whoops_defaults(config=None):
 def get_whoops(path, config=None):
     """gets an instance of whoops.WebHDFS for the given path. If path is not an absolute URI,
        then it uses the host and port from the configuration."""
-    (scheme, netloc, path, query, fragment) = urlparse.urlsplit(path)
+    (scheme, netloc, path, query, fragment) = urllib.parse.urlsplit(path)
 
     if scheme and scheme != "hdfs" and scheme != "webhdfs":
         raise RuntimeError("only hdfs and webhdfs supported!")
@@ -67,7 +67,7 @@ class WebHdfsClient(object):
     def _make_absolute(self, inpath):
         """Makes the given path absolute if it's not already. It is assumed that the path is
         relative to self._homedir"""
-        (scheme, netloc, path, query, fragment) = urlparse.urlsplit(inpath)
+        (scheme, netloc, path, query, fragment) = urllib.parse.urlsplit(inpath)
 
         if scheme or posixpath.isabs(path):
             # if a scheme is specified, assume it's absolute.
@@ -80,14 +80,14 @@ class WebHdfsClient(object):
         try:
             whdfs.stat(self._make_absolute(path))
             return True
-        except whoops.WebHDFSError, e:
+        except whoops.WebHDFSError as e:
             if e.args[0] == "Not Found":
                 return False
             raise e
 
     def rename(self, path, dest):
-        (scheme, netloc, _, _, _) = urlparse.urlsplit(path)
-        (dest_scheme, dest_netloc, _, _, _) = urlparse.urlsplit(dest)
+        (scheme, netloc, _, _, _) = urllib.parse.urlsplit(path)
+        (dest_scheme, dest_netloc, _, _, _) = urllib.parse.urlsplit(dest)
         if scheme != dest_scheme or netloc != dest_netloc:
             raise RuntimeError("Filesystems don't match. source: %s dest: %s".format(path, dest))
 
@@ -120,7 +120,7 @@ class WebHdfsClient(object):
                 # this is ugly but necessary to be compatible with hdfs.py
                 extra_data += ('d' if fs['type'] == 'DIRECTORY' else '-',)
             if include_time:
-                modification_time = datetime.datetime.fromtimestamp(fs[u'modificationTime']/1000)
+                modification_time = datetime.datetime.fromtimestamp(fs['modificationTime']/1000)
                 extra_data += (modification_time,)
 
             if len(extra_data) > 0:

@@ -40,7 +40,7 @@ class ProcessRemoteData(luigi.Task):
                 processes_per_user[username] += 1
 
         toplist = sorted(
-            processes_per_user.iteritems(),
+            processes_per_user.items(),
             key=lambda x: x[1],
             reverse=True
         )

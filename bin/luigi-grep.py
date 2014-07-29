@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     for job in results:
         print "{name}: {status}, Dependencies:".format(name=job['name'], status=job['status'])
-        for (status, jobs) in job['deps_by_status'].iteritems():
+        for (status, jobs) in job['deps_by_status'].items():
             print "  status={status}".format(status=status)
             for job in jobs:
                 print "    {job}".format(job=job)

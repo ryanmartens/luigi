@@ -12,15 +12,16 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
+import io
 import os
 import random
 import tempfile
 import shutil
-from target import FileSystem, FileSystemTarget
+from .target import FileSystem, FileSystemTarget
 from luigi.format import FileWrapper
 
 
-class atomic_file(file):
+class atomic_file(io.FileIO):
     # Simple class that writes to a temp file and moves it on close()
     # Also cleans up the temp file if close is not invoked
     def __init__(self, path):
@@ -44,7 +45,7 @@ class atomic_file(file):
         " Close/commit the file if there are no exception "
         if exc_type:
             return
-        return file.__exit__(self, exc_type, exc, traceback)
+        return io.FileIO.__exit__(self, exc_type, exc, traceback)
 
 
 class LocalFileSystem(FileSystem):

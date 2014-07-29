@@ -13,19 +13,19 @@
 # the License.
 
 import random
-from scheduler import CentralPlannerScheduler, PENDING, FAILED, DONE
+from .scheduler import CentralPlannerScheduler, PENDING, FAILED, DONE
 import threading
 import time
 import os
 import socket
-import configuration
+from . import configuration
 import traceback
 import logging
 import warnings
-import notifications
+from . import notifications
 import getpass
-from target import Target
-from task import Task
+from .target import Target
+from .task import Task
 
 try:
     import simplejson as json
@@ -374,7 +374,7 @@ class Worker(object):
                 self._log_remote_tasks(running_tasks, n_pending_tasks)
                 if not children:
                     if self.__keep_alive and running_tasks and n_pending_tasks:
-                        sleeper.next()
+                        next(sleeper)
                         continue
                     else:
                         break

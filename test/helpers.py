@@ -21,10 +21,10 @@ class with_config(object):
       orig_conf = luigi.configuration.get_config()
       luigi.configuration.LuigiConfigParser._instance = None
       conf = luigi.configuration.get_config()
-      for (section, settings) in self.config.iteritems():
+      for (section, settings) in self.config.items():
         if not conf.has_section(section):
           conf.add_section(section)
-        for (name, value) in settings.iteritems():
+        for (name, value) in settings.items():
           conf.set(section, name, value)
       try:
         return fun(*args, **kwargs)

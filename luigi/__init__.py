@@ -13,14 +13,14 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-import task
-import file  # wtf @ naming
-import rpc
-import parameter
-import configuration
-import interface
-import target
-import worker
+from . import task
+from . import file  # wtf @ naming
+from . import rpc
+from . import parameter
+from . import configuration
+from . import interface
+from . import target
+from . import worker
 
 Event = worker.Event
 

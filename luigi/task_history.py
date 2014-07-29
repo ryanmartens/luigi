@@ -15,7 +15,7 @@
 import abc
 import traceback
 import logging
-import task
+from . import task
 
 logger = logging.getLogger('luigi-interface')
 
@@ -30,10 +30,9 @@ class Task(object):
         self.host = host
 
 
-class TaskHistory(object):
+class TaskHistory(object, metaclass=abc.ABCMeta):
     ''' Abstract Base Class for updating the run history of a task
     '''
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def task_scheduled(self, task_id):

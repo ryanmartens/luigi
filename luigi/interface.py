@@ -12,23 +12,23 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-import worker
-import lock
+from . import worker
+from . import lock
 import logging
 import logging.config
-import rpc
+from . import rpc
 import optparse
-import scheduler
+from . import scheduler
 import warnings
-import configuration
-import task
-import parameter
+from . import configuration
+from . import task
+from . import parameter
 import re
 import argparse
 import sys
 import os
 
-from task import Register
+from .task import Register
 
 
 def setup_interface_logging(conf_file=None):
@@ -212,7 +212,7 @@ class ErrorWrappedArgumentParser(argparse.ArgumentParser):
 
     # Simple unweighted Levenshtein distance
     def _editdistance(self, a, b):
-        r0 = range(0, len(b) + 1)
+        r0 = list(range(0, len(b) + 1))
         r1 = [0] * (len(b) + 1)
 
         for i in range(0, len(a)):
@@ -230,7 +230,7 @@ class ErrorWrappedArgumentParser(argparse.ArgumentParser):
         result = re.match("argument .+: invalid choice: '(\w+)'.+", message)
         if result:
             arg = result.group(1)
-            weightedTasks = [(self._editdistance(arg, task), task) for task in Register.get_reg().keys()]
+            weightedTasks = [(self._editdistance(arg, task), task) for task in list(Register.get_reg().keys())]
             orderedTasks = sorted(weightedTasks, key=lambda pair: pair[0])
             candidates = [task for (dist, task) in orderedTasks if dist <= 5 and dist < len(task)]
             displaystring = ""
@@ -288,7 +288,7 @@ class ArgParseInterface(Interface):
             orderedtasks = '{%s}' % ','.join(sorted(Register.get_reg().keys()))
             subparsers = parser.add_subparsers(dest='command', metavar=orderedtasks)
 
-            for name, cls in Register.get_reg().iteritems():
+            for name, cls in list(Register.get_reg().items()):
                 subparser = subparsers.add_parser(name)
                 if cls == Register.AMBIGUOUS_CLASS:
                     continue
@@ -355,7 +355,7 @@ class PassThroughOptionParser(optparse.OptionParser):
         while rargs:
             try:
                 optparse.OptionParser._process_args(self, largs, rargs, values)
-            except (optparse.BadOptionError, optparse.AmbiguousOptionError), e:
+            except (optparse.BadOptionError, optparse.AmbiguousOptionError) as e:
                 largs.append(e.opt_str)
 
 
@@ -431,7 +431,7 @@ class OptParseInterface(Interface):
         options, args = parser.parse_args(args=cmdline_args)
 
         params = {}
-        for k, v in vars(options).iteritems():
+        for k, v in list(vars(options).items()):
             if k != 'task':
                 params[k] = v
 

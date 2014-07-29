@@ -12,9 +12,9 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-import configuration
+from . import configuration
 import datetime
-from ConfigParser import NoSectionError, NoOptionError
+from configparser import NoSectionError, NoOptionError
 
 _no_default = object()
 
@@ -105,7 +105,7 @@ class Parameter(object):
         (section, name) = (self.default_from_config['section'], self.default_from_config['name'])
         try:
             return conf.get(section, name)
-        except (NoSectionError, NoOptionError), e:
+        except (NoSectionError, NoOptionError) as e:
             if safe:
                 return None
             raise UnknownConfigException("Couldn't find value for section={0} name={1}. Search config files: '{2}'".format(
@@ -222,7 +222,7 @@ class DateParameter(Parameter):
     """
     def parse(self, s):
         """Parses a date string formatted as ``YYYY-MM-DD``."""
-        return datetime.date(*map(int, s.split('-')))
+        return datetime.date(*list(map(int, s.split('-'))))
 
 
 class IntParameter(Parameter):
@@ -270,7 +270,7 @@ class DateIntervalParameter(Parameter):
         """
         # TODO: can we use xml.utils.iso8601 or something similar?
 
-        import date_interval as d
+        from . import date_interval as d
 
         for cls in [d.Year, d.Month, d.Week, d.Date, d.Custom]:
             i = cls.parse(s)
@@ -298,7 +298,7 @@ class TimeDeltaParameter(Parameter):
         if re_match:
             kwargs = {}
             has_val = False
-            for k,v in re_match.groupdict(default="0").items():
+            for k,v in list(re_match.groupdict(default="0").items()):
                 val = int(v)
                 has_val = has_val or val != 0
                 kwargs[k] = val

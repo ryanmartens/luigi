@@ -82,12 +82,12 @@ class S3CopyToTable(rdbms.CopyToTable):
         # attempt to copy the data into postgres
         # if it fails because the target table doesn't exist
         # try to create it by running self.create_table
-        for attempt in xrange(2):
+        for attempt in range(2):
             try:
                 cursor = connection.cursor()
                 self.init_copy(connection)
                 self.copy(cursor, path)
-            except psycopg2.ProgrammingError, e:
+            except psycopg2.ProgrammingError as e:
                 if e.pgcode == psycopg2.errorcodes.UNDEFINED_TABLE and attempt == 0:
                     # if first attempt fails with "relation not found",
                     # try creating table

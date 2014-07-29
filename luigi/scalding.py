@@ -4,9 +4,9 @@ import re
 import subprocess
 
 from luigi import LocalTarget
-import configuration
-import hadoop
-import hadoop_jar
+from . import configuration
+from . import hadoop
+from . import hadoop_jar
 
 logger = logging.getLogger('luigi-interface')
 
@@ -151,11 +151,10 @@ class ScaldingJobRunner(hadoop.JobRunner):
         if not os.path.exists(build_dir):
             os.makedirs(build_dir)
 
-        classpath = ':'.join(filter(None,
-                                    self.get_scalding_jars() +
+        classpath = ':'.join([_f for _f in self.get_scalding_jars() +
                                     self.get_provided_jars() +
                                     self.get_libjars() +
-                                    job.extra_jars()))
+                                    job.extra_jars() if _f])
         scala_cp = ':'.join(self.get_scala_jars(include_compiler=True))
 
         # compile scala source
@@ -175,7 +174,7 @@ class ScaldingJobRunner(hadoop.JobRunner):
         job_jar = self.build_job_jar(job)
         jars = [job_jar] + self.get_libjars() + job.extra_jars()
         scalding_core = self.get_scalding_core()
-        libjars = ','.join(filter(None, jars))
+        libjars = ','.join([_f for _f in jars if _f])
         arglist = ['hadoop', 'jar', scalding_core, '-libjars', libjars]
         arglist += ['-D%s' % c for c in job.jobconfs()]
 
@@ -190,7 +189,7 @@ class ScaldingJobRunner(hadoop.JobRunner):
 
         env = os.environ.copy()
         jars.append(scalding_core)
-        hadoop_cp = ':'.join(filter(None, jars))
+        hadoop_cp = ':'.join([_f for _f in jars if _f])
         env['HADOOP_CLASSPATH'] = hadoop_cp
         logger.info("Submitting Hadoop job: HADOOP_CLASSPATH=%s %s",
                     hadoop_cp, ' '.join(arglist))
@@ -253,7 +252,7 @@ class ScaldingJobTask(hadoop.BaseHadoopJobTask):
     def args(self):
         """returns an array of args to pass to the job."""
         arglist = []
-        for k, v in self.requires_hadoop().iteritems():
+        for k, v in list(self.requires_hadoop().items()):
             arglist.append('--' + k)
             arglist.extend([t.output().path for t in v])
         arglist.extend(['--output', self.output()])

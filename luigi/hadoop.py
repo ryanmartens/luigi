@@ -23,16 +23,16 @@ from operator import itemgetter
 import pickle
 import binascii
 import logging
-import StringIO
+import io
 import re
 import shutil
 import signal
 from hashlib import md5
 import luigi
 import luigi.hdfs
-import configuration
+from . import configuration
 import warnings
-import mrrunner
+from . import mrrunner
 import json
 
 logger = logging.getLogger('luigi-interface')
@@ -249,7 +249,7 @@ def run_and_track_hadoop_job(arglist, tracking_url_callback=None, env=None):
 
         try:
             task_failures = fetch_task_failures(tracking_url)
-        except Exception, e:
+        except Exception as e:
             raise HadoopJobError(message + 'Additionally, an error occurred when fetching data from %s: %s' %
                                  (tracking_url, e), out, err)
 
@@ -289,7 +289,7 @@ def fetch_task_failures(tracking_url):
         try:
             r = b2.open(task_url, timeout=timeout)
             data = r.read()
-        except Exception, e:
+        except Exception as e:
             logger.debug('Error fetching data from %s: %s', task_url, e)
             continue
         # Try to get the hex-encoded traceback back from the output
@@ -385,7 +385,7 @@ class HadoopJobRunner(JobRunner):
 
         jobconfs = job.jobconfs()
 
-        for k, v in self.jobconfs.iteritems():
+        for k, v in list(self.jobconfs.items()):
             jobconfs.append('%s=%s' % (k, v))
 
         for conf in jobconfs:
@@ -462,7 +462,7 @@ class LocalJobRunner(JobRunner):
             output.write(line)
 
     def group(self, input):
-        output = StringIO.StringIO()
+        output = io.StringIO()
         lines = []
         for i, line in enumerate(input):
             parts = line.rstrip('\n').split('\t')
@@ -474,7 +474,7 @@ class LocalJobRunner(JobRunner):
         return output
 
     def run_job(self, job):
-        map_input = StringIO.StringIO()
+        map_input = io.StringIO()
 
         for i in luigi.task.flatten(job.input_hadoop()):
             self.sample(i.open('r'), self.samplelines, map_input)
@@ -490,7 +490,7 @@ class LocalJobRunner(JobRunner):
 
         job.init_mapper()
         # run job now...
-        map_output = StringIO.StringIO()
+        map_output = io.StringIO()
         job._run_mapper(map_input, map_output)
         map_output.seek(0)
 
@@ -498,7 +498,7 @@ class LocalJobRunner(JobRunner):
             reduce_input = self.group(map_output)
         else:
             combine_input = self.group(map_output)
-            combine_output = StringIO.StringIO()
+            combine_output = io.StringIO()
             job._run_combiner(combine_input, combine_output)
             combine_output.seek(0)
             reduce_input = self.group(combine_output)
@@ -634,9 +634,9 @@ class JobTask(BaseHadoopJobTask):
            The default implementation outputs tab separated items"""
         for output in outputs:
             try:
-                print >> stdout, "\t".join(map(str, flatten(output)))
+                print("\t".join(map(str, flatten(output))), file=stdout)
             except:
-                print >> stderr, output
+                print(output, file=stderr)
                 raise
 
     def mapper(self, item):
@@ -672,7 +672,7 @@ class JobTask(BaseHadoopJobTask):
     def _flush_batch_incr_counter(self):
         """ Increments any unflushed counter values
         """
-        for key, count in self._counter_dict.iteritems():
+        for key, count in list(self._counter_dict.items()):
             if count == 0:
                 continue
             args = list(key) + [count]
@@ -686,10 +686,10 @@ class JobTask(BaseHadoopJobTask):
         if len(args) == 2:
             # backwards compatibility with existing hadoop jobs
             group_name, count = args
-            print >> sys.stderr, 'reporter:counter:%s,%s' % (group_name, count)
+            print('reporter:counter:%s,%s' % (group_name, count), file=sys.stderr)
         else:
             group, name, count = args
-            print >> sys.stderr, 'reporter:counter:%s,%s,%s' % (group, name, count)
+            print('reporter:counter:%s,%s,%s' % (group, name, count), file=sys.stderr)
 
     def extra_modules(self):
         return []  # can be overridden in subclass
@@ -790,12 +790,12 @@ class JobTask(BaseHadoopJobTask):
         """Reader which uses python eval on each part of a tab separated string.
         Yields a tuple of python objects."""
         for input in input_stream:
-            yield map(eval, input.split("\t"))
+            yield list(map(eval, input.split("\t")))
 
     def internal_writer(self, outputs, stdout):
         """Writer which outputs the python repr for each item"""
         for output in outputs:
-            print >> stdout, "\t".join(map(repr, output))
+            print("\t".join(map(repr, output)), file=stdout)
 
 
 def pickle_reader(job, input_stream):
@@ -803,11 +803,11 @@ def pickle_reader(job, input_stream):
         return pickle.loads(binascii.a2b_base64(item))
     for line in input_stream:
         items = line.split('\t')
-        yield map(decode, items)
+        yield list(map(decode, items))
 
 
 def pickle_writer(job, outputs, stdout):
     def encode(item):
         return binascii.b2a_base64(pickle.dumps(item))[:-1]  # remove trailing newline
     for keyval in outputs:
-        print >> stdout, "\t".join(map(encode, keyval))
+        print("\t".join(map(encode, keyval)), file=stdout)

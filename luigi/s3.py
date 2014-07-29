@@ -17,13 +17,13 @@ import os
 import os.path
 import random
 import tempfile
-import urlparse
+import urllib.parse
 
 import boto
 from boto.s3.key import Key
 
-import configuration
-from ConfigParser import NoSectionError, NoOptionError
+from . import configuration
+from configparser import NoSectionError, NoOptionError
 from luigi.parameter import Parameter
 from luigi.target import FileSystem
 from luigi.target import FileSystemTarget
@@ -219,7 +219,7 @@ class S3Client(FileSystem):
             return None
 
     def _path_to_bucket_and_key(self, path):
-        (scheme, netloc, path, query, fragment) = urlparse.urlsplit(path)
+        (scheme, netloc, path, query, fragment) = urllib.parse.urlsplit(path)
         path_without_initial_slash = path[1:]
         return netloc, path_without_initial_slash
 
@@ -300,7 +300,7 @@ class ReadableS3File(object):
         while has_next:
             try:
                 # grab the next chunk
-                chunk = key_iter.next()
+                chunk = next(key_iter)
                 
                 # split on newlines, preserving the newline
                 for line in chunk.splitlines(True):

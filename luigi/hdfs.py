@@ -16,12 +16,12 @@ import subprocess
 import os
 import random
 import tempfile
-import urlparse
+import urllib.parse
 import luigi.format
 import datetime
 import re
 from luigi.target import FileSystem, FileSystemTarget, FileAlreadyExists
-import configuration
+from . import configuration
 import logging
 logger = logging.getLogger('luigi-interface')
 
@@ -81,8 +81,8 @@ def tmppath(path=None):
         base_dir = configured_hdfs_tmp_dir
     elif path is not None:
         #need to copy correct schema and network location
-        parsed = urlparse.urlparse(path)
-        base_dir = urlparse.urlunparse((parsed.scheme, parsed.netloc, temp_dir, '', '', ''))
+        parsed = urllib.parse.urlparse(path)
+        base_dir = urllib.parse.urlunparse((parsed.scheme, parsed.netloc, temp_dir, '', '', ''))
     else:
         #just system temporary directory
         base_dir = temp_dir
@@ -94,7 +94,7 @@ def tmppath(path=None):
             subdir = path[len(temp_dir):]
         else:
             #Protection from /tmp/hdfs:/dir/file
-            parsed = urlparse.urlparse(path)
+            parsed = urllib.parse.urlparse(path)
             subdir = parsed.path
         subdir = subdir.lstrip('/') + '-'
     else:
@@ -106,7 +106,7 @@ def tmppath(path=None):
 def list_path(path):
     if isinstance(path, list) or isinstance(path, tuple):
         return path
-    if isinstance(path, str) or isinstance(path, unicode):
+    if isinstance(path, str) or isinstance(path, str):
         return [path, ]
     return [str(path), ]
 
@@ -120,7 +120,7 @@ class HdfsClient(FileSystem):
         """
 
         cmd = [load_hadoop_cmd(), 'fs', '-stat', path]
-        logger.debug('Running file existence check: %s' % u' '.join(cmd))
+        logger.debug('Running file existence check: %s' % ' '.join(cmd))
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
         stdout, stderr = p.communicate()
         if p.returncode == 0:
@@ -201,7 +201,7 @@ class HdfsClient(FileSystem):
     def mkdir(self, path):
         try:
             call_check([load_hadoop_cmd(), 'fs', '-mkdir', '-p', path])
-        except HDFSCliError, ex:
+        except HDFSCliError as ex:
             if "File exists" in ex.stderr:
                 raise FileAlreadyExists(ex.stderr)
             else:
@@ -414,7 +414,7 @@ class SnakebiteHdfsClient(HdfsClient):
         return list(self.get_bite().copyToLocal(list_path(path),
                                                 local_destination))
 
-    def mkdir(self, path, parents=True, mode=0755):
+    def mkdir(self, path, parents=True, mode=0o755):
         """
         Use snakebite.mkdir, if available.
 
@@ -426,7 +426,7 @@ class SnakebiteHdfsClient(HdfsClient):
         :param parents: create any missing parent directories
         :type parents: boolean, default is True
         :param mode: \*nix style owner/group/other permissions
-        :type mode: octal, default 0755
+        :type mode: octal, default 0o755
         """
         bite = self.get_bite()
         if bite.test(path, exists=True):
@@ -483,7 +483,7 @@ class HdfsClientCdh3(HdfsClient):
         '''
         try:
             call_check([load_hadoop_cmd(), 'fs', '-mkdir', path])
-        except HDFSCliError, ex:
+        except HDFSCliError as ex:
             if "File exists" in ex.stderr:
                 raise FileAlreadyExists(ex.stderr)
             else:
@@ -566,7 +566,7 @@ class HdfsAtomicWritePipe(luigi.format.OutputPipeProcessWrapper):
         super(HdfsAtomicWritePipe, self).__init__([load_hadoop_cmd(), 'fs', '-put', '-', self.tmppath])
 
     def abort(self):
-        print "Aborting %s('%s'). Removing temporary file '%s'" % (self.__class__.__name__, self.path, self.tmppath)
+        print(("Aborting %s('%s'). Removing temporary file '%s'" % (self.__class__.__name__, self.path, self.tmppath)))
         super(HdfsAtomicWritePipe, self).abort()
         remove(self.tmppath)
 
@@ -584,7 +584,7 @@ class HdfsAtomicWriteDirPipe(luigi.format.OutputPipeProcessWrapper):
         super(HdfsAtomicWriteDirPipe, self).__init__([load_hadoop_cmd(), 'fs', '-put', '-', self.datapath])
 
     def abort(self):
-        print "Aborting %s('%s'). Removing temporary dir '%s'" % (self.__class__.__name__, self.path, self.tmppath)
+        print(("Aborting %s('%s'). Removing temporary dir '%s'" % (self.__class__.__name__, self.path, self.tmppath)))
         super(HdfsAtomicWriteDirPipe, self).abort()
         remove(self.tmppath)
 
@@ -624,7 +624,7 @@ class HdfsTarget(FileSystemTarget):
         super(HdfsTarget, self).__init__(path)
         self.format = format
         self.is_tmp = is_tmp
-        (scheme, netloc, path, query, fragment) = urlparse.urlsplit(path)
+        (scheme, netloc, path, query, fragment) = urllib.parse.urlsplit(path)
         assert ":" not in path  # colon is not allowed in hdfs filenames
 
     def __del__(self):
@@ -696,7 +696,7 @@ in luigi. Use target.path instead", stacklevel=2)
             parts = self.path.split("/")
             # start with the full path and then up the tree until we can check
             length = len(parts)
-            for part in xrange(length):
+            for part in range(length):
                 path = "/".join(parts[0:length - part]) + "/"
                 if exists(path):
                     # if the path exists and we can write there, great!

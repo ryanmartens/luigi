@@ -17,11 +17,11 @@ import datetime
 import os
 import logging
 import time
-import cPickle as pickle
-import task_history as history
+import pickle
+from . import task_history as history
 logger = logging.getLogger("luigi.server")
 
-from task_status import PENDING, FAILED, DONE, RUNNING, UNKNOWN
+from .task_status import PENDING, FAILED, DONE, RUNNING, UNKNOWN
 
 
 class Scheduler(object):
@@ -128,7 +128,7 @@ class CentralPlannerScheduler(Scheduler):
             # Convert from old format
             # TODO: this is really ugly, we need something more future-proof
             # Every time we add an attribute to the Worker class, this code needs to be updated
-            for k, v in self._active_workers.iteritems():
+            for k, v in list(self._active_workers.items()):
                 if isinstance(v, float):
                     self._active_workers[k] = Worker(id=k, last_active=v)
         else:
@@ -138,7 +138,7 @@ class CentralPlannerScheduler(Scheduler):
         logger.info("Starting pruning of task graph")
         # Delete workers that haven't said anything for a while (probably killed)
         delete_workers = []
-        for worker in self._active_workers.values():
+        for worker in list(self._active_workers.values()):
             if worker.last_active < time.time() - self._worker_disconnect_delay:
                 logger.info("Worker %s timed out (no contact for >=%ss)", worker, self._worker_disconnect_delay)
                 delete_workers.append(worker.id)
@@ -149,7 +149,7 @@ class CentralPlannerScheduler(Scheduler):
         remaining_workers = set(self._active_workers.keys())
 
         # Mark tasks with no remaining active stakeholders for deletion
-        for task_id, task in self._tasks.iteritems():
+        for task_id, task in list(self._tasks.items()):
             if not task.stakeholders.intersection(remaining_workers):
                 if task.remove is None:
                     logger.info("Task %r has stakeholders %r but none remain connected -> will remove task in %s seconds", task_id, task.stakeholders, self._remove_delay)
@@ -164,7 +164,7 @@ class CentralPlannerScheduler(Scheduler):
 
         # Remove tasks that have no stakeholders
         remove_tasks = []
-        for task_id, task in self._tasks.iteritems():
+        for task_id, task in list(self._tasks.items()):
             if task.remove and time.time() > task.remove:
                 logger.info("Removing task %r (no connected stakeholders)", task_id)
                 remove_tasks.append(task_id)
@@ -173,7 +173,7 @@ class CentralPlannerScheduler(Scheduler):
             self._tasks.pop(task_id)
 
         # Reset FAILED tasks to PENDING if max timeout is reached, and retry delay is >= 0
-        for task in self._tasks.values():
+        for task in list(self._tasks.values()):
             if task.status == FAILED and self._retry_delay >= 0 and task.retry < time.time():
                 task.status = PENDING
         logger.info("Done pruning task graph")
@@ -240,7 +240,7 @@ class CentralPlannerScheduler(Scheduler):
         locally_pending_tasks = 0
         running_tasks = []
 
-        for task_id, task in self._tasks.iteritems():
+        for task_id, task in list(self._tasks.items()):
             if worker not in task.workers:
                 continue
 
@@ -343,7 +343,7 @@ class CentralPlannerScheduler(Scheduler):
     def graph(self):
         self.prune()
         serialized = {}
-        for task_id, task in self._tasks.iteritems():
+        for task_id, task in list(self._tasks.items()):
             serialized[task_id] = self._serialize_task(task_id)
         return serialized
 
@@ -377,7 +377,7 @@ class CentralPlannerScheduler(Scheduler):
         self.prune()
         result = {}
         upstream_status_table = {}  # used to memoize upstream status
-        for task_id, task in self._tasks.iteritems():
+        for task_id, task in list(self._tasks.items()):
             if not status or task.status == status:
                 if (task.status != PENDING or not upstream_status or
                     upstream_status == self._upstream_status(task_id, upstream_status_table)):
@@ -397,7 +397,7 @@ class CentralPlannerScheduler(Scheduler):
         serialized[task_id] = self._serialize_task(task_id)
         while len(stack) > 0:
             curr_id = stack.pop()
-            for id, task in self._tasks.iteritems():
+            for id, task in list(self._tasks.items()):
                 if curr_id in task.deps:
                     serialized[curr_id]["deps"].append(id)
                     if id not in serialized:
@@ -409,7 +409,7 @@ class CentralPlannerScheduler(Scheduler):
         ''' query for a subset of tasks by task_id '''
         self.prune()
         result = collections.defaultdict(dict)
-        for task_id, task in self._tasks.iteritems():
+        for task_id, task in list(self._tasks.items()):
             if task_id.find(task_str) != -1:
                 serialized = self._serialize_task(task_id)
                 result[task.status][task_id] = serialized

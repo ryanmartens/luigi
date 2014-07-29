@@ -14,7 +14,7 @@
 
 import abc
 import logging
-import parameter
+from . import parameter
 import warnings
 import traceback
 
@@ -46,7 +46,7 @@ def id_to_name_and_params(task_id):
         equals = x.index('=')
         return x[:equals], x[equals + 1:]
     if params:
-        param_list = map(split_equals, params.split(', '))  # TODO: param values with ', ' in them will break this
+        param_list = list(map(split_equals, params.split(', ')))  # TODO: param values with ', ' in them will break this
     else:
         param_list = []
     return task_family, dict(param_list)
@@ -164,7 +164,7 @@ class Register(abc.ABCMeta):
         :return: a ``dict`` of parameter name -> parameter.
         """
         global_params = {}
-        for t_name, t_cls in cls.get_reg().iteritems():
+        for t_name, t_cls in list(cls.get_reg().items()):
             if t_cls == cls.AMBIGUOUS_CLASS:
                 continue
             for param_name, param_obj in t_cls.get_global_params():
@@ -172,11 +172,11 @@ class Register(abc.ABCMeta):
                     # Could be registered multiple times in case there's subclasses
                     raise Exception('Global parameter %r registered by multiple classes' % param_name)
                 global_params[param_name] = param_obj
-        return global_params.iteritems()
+        return list(global_params.items())
 
 
 
-class Task(object):
+class Task(object, metaclass=Register):
     """
     This is the base class of all Luigi Tasks, the base unit of work in Luigi.
 
@@ -207,7 +207,6 @@ class Task(object):
     ``Task._parameters``
       list of ``(parameter_name, parameter)`` tuples for this task class
     """
-    __metaclass__ = Register
 
     _event_callbacks = {}
 
@@ -227,7 +226,7 @@ class Task(object):
         """Trigger that calls all of the specified events associated with this
         class.
         """
-        for event_class, event_callbacks in self._event_callbacks.iteritems():
+        for event_class, event_callbacks in list(self._event_callbacks.items()):
             if not isinstance(self, event_class):
                 continue
             for callback in event_callbacks.get(event, []):
@@ -299,7 +298,7 @@ class Task(object):
             result[param_name] = arg
 
         # Then the optional arguments
-        for param_name, arg in kwargs.iteritems():
+        for param_name, arg in list(kwargs.items()):
             if param_name in result:
                 raise parameter.DuplicateParameterException('%s: parameter %s was already set as a positional parameter' % (exc_desc, param_name))
             if param_name not in params_dict:
@@ -388,7 +387,7 @@ class Task(object):
         - There's task inheritance and some logic is on the base class
         '''
         k = self.param_kwargs.copy()
-        k.update(kwargs.items())
+        k.update(list(kwargs.items()))
 
         if cls is None:
             cls = self.__class__
@@ -534,7 +533,7 @@ def getpaths(struct):
         return struct.output()
     elif isinstance(struct, dict):
         r = {}
-        for k, v in struct.iteritems():
+        for k, v in list(struct.items()):
             r[k] = getpaths(v)
         return r
     else:
@@ -563,10 +562,10 @@ def flatten(struct):
         return []
     flat = []
     if isinstance(struct, dict):
-        for key, result in struct.iteritems():
+        for key, result in list(struct.items()):
             flat += flatten(result)
         return flat
-    if isinstance(struct, basestring):
+    if isinstance(struct, str):
         return [struct]
 
     try:

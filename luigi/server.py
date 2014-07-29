@@ -22,12 +22,12 @@ import tornado.netutil
 import tornado.web
 import tornado.httpclient
 import tornado.httpserver
-import configuration
-import scheduler
+from . import configuration
+from . import scheduler
 import pkg_resources
 import signal
-from rpc import RemoteSchedulerResponder
-import task_history
+from .rpc import RemoteSchedulerResponder
+from . import task_history
 import logging
 logger = logging.getLogger("luigi.server")
 
@@ -39,7 +39,7 @@ def _create_scheduler():
     worker_disconnect_delay = config.getfloat('scheduler', 'worker-disconnect-delay', 60.0)
     state_path = config.get('scheduler', 'state-path', '/var/lib/luigi-server/state.pickle')
     if config.getboolean('scheduler', 'record_task_history', False):
-        import db_task_history  # Needs sqlalchemy, thus imported here
+        from . import db_task_history  # Needs sqlalchemy, thus imported here
         task_history_impl = db_task_history.DbTaskHistory()
     else:
         task_history_impl = task_history.NopHistory()
