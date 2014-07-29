@@ -41,7 +41,7 @@ def acquire_for(pid_dir, num_available=1):
         os.mkdir(pid_dir)
         os.chmod(pid_dir, 0o777)
 
-    pidfile = os.path.join(pid_dir, hashlib.md5(my_cmd).hexdigest()) + '.pid'
+    pidfile = os.path.join(pid_dir, hashlib.md5(my_cmd.encode('utf-8')).hexdigest()) + '.pid'
 
     pids = set()
     pid_cmds = {}
